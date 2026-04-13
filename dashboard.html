@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unity Drive - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-100 font-sans min-h-screen flex">
+
+    <div class="w-64 bg-white border-r border-slate-200 p-6 hidden md:block">
+        <div class="flex items-center gap-3 mb-10">
+            <i class="fas fa-cloud text-indigo-600 text-2xl"></i>
+            <span class="font-bold text-xl text-slate-800">Unity Drive</span>
+        </div>
+        <nav class="space-y-4">
+            <a href="#" class="flex items-center gap-3 text-indigo-600 font-semibold bg-indigo-50 p-3 rounded-xl">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+            <a href="#" class="flex items-center gap-3 text-slate-500 p-3 hover:bg-slate-50 rounded-xl transition">
+                <i class="fas fa-folder"></i> File Saya
+            </a>
+            <a href="#" class="flex items-center gap-3 text-slate-500 p-3 hover:bg-slate-50 rounded-xl transition">
+                <i class="fas fa-cog"></i> Pengaturan
+            </a>
+        </nav>
+    </div>
+
+    <div class="flex-1 p-4 md:p-10">
+        <header class="flex justify-between items-center mb-8">
+            <h2 class="text-2xl font-bold text-slate-800">Ringkasan Penyimpanan</h2>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-slate-500">user@gmail.com</span>
+                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold">U</div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 md:col-span-2">
+                <div class="flex justify-between items-end mb-4">
+                    <div>
+                        <p class="text-slate-400 text-sm">Total Kapasitas Terpadu</p>
+                        <h3 class="text-3xl font-bold text-slate-800" id="total-text">15 GB</h3>
+                    </div>
+                    <p class="text-slate-500 text-sm" id="usage-text">0 GB digunakan</p>
+                </div>
+                <div class="w-full bg-slate-100 h-4 rounded-full overflow-hidden flex">
+                    <div id="bar-gdrive" class="bg-blue-500 h-full transition-all duration-500" style="width: 0%"></div>
+                    <div id="bar-terabox" class="bg-purple-500 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="flex gap-4 mt-4">
+                    <div class="flex items-center gap-2 text-xs text-slate-500">
+                        <span class="w-3 h-3 bg-blue-500 rounded-full"></span> Google Drive
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-slate-500">
+                        <span class="w-3 h-3 bg-purple-500 rounded-full"></span> TeraBox
+                    </div>
+                </div>
+            </div>
+
+            <div id="terabox-card" class="bg-gradient-to-br from-indigo-600 to-indigo-800 p-6 rounded-3xl shadow-lg text-white flex flex-col justify-center items-center text-center transition-all hover:scale-105">
+                <i class="fas fa-rocket text-3xl mb-3"></i>
+                <h4 class="font-bold mb-1">Butuh Ruang Lebih?</h4>
+                <p class="text-indigo-100 text-xs mb-4">Aktifkan TeraBox untuk tambahan 1TB Gratis!</p>
+                <button onclick="activateTeraBox()" class="bg-white text-indigo-600 px-6 py-2 rounded-xl font-bold text-sm shadow-md">
+                    Hubungkan 1TB
+                </button>
+            </div>
+        </div>
+
+        <div class="border-4 border-dashed border-slate-200 rounded-3xl p-20 text-center hover:border-indigo-300 transition group">
+            <i class="fas fa-cloud-upload-alt text-5xl text-slate-300 group-hover:text-indigo-400 mb-4 transition"></i>
+            <p class="text-slate-500 font-medium">Tarik file 1 TB Anda ke sini</p>
+            <p class="text-slate-400 text-sm">Sistem akan membagi file secara otomatis</p>
+        </div>
+    </div>
+
+    <script>
+        function activateTeraBox() {
+            // Simulasi deteksi akun via Google SSO
+            alert("Menghubungkan ke TeraBox via user@gmail.com...");
+            
+            // Ubah UI secara Real-time
+            document.getElementById('total-text').innerText = "1.015 TB";
+            document.getElementById('bar-gdrive').style.width = "1.5%"; // Representasi 15GB
+            document.getElementById('bar-terabox').style.width = "98.5%"; // Representasi 1TB
+            document.getElementById('terabox-card').innerHTML = `
+                <i class="fas fa-check-circle text-4xl mb-3 text-green-300"></i>
+                <h4 class="font-bold">TeraBox Aktif!</h4>
+                <p class="text-indigo-100 text-xs">Akun Terkoneksi via Google</p>
+            `;
+            document.getElementById('terabox-card').classList.replace('from-indigo-600', 'from-emerald-600');
+        }
+    </script>
+</body>
+</html>
