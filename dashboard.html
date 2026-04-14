@@ -1,73 +1,31 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unity Drive - Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-slate-100 font-sans min-h-screen flex">
-
-    <div class="w-64 bg-white border-r border-slate-200 p-6 hidden md:block">
-        <div class="flex items-center gap-3 mb-10">
-            <i class="fas fa-cloud text-indigo-600 text-2xl"></i>
-            <span class="font-bold text-xl text-slate-800">Unity Drive</span>
+<div class="mt-10">
+    <h3 class="text-xl font-bold text-slate-800 mb-6 text-left">Jelajahi Gudang Kapasitas (Gratis)</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        
+        <div class="bg-white p-4 rounded-2xl border-2 border-indigo-500 shadow-sm relative">
+            <span class="absolute -top-2 -right-2 bg-indigo-500 text-white text-[10px] px-2 py-1 rounded-full">Induk</span>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" class="w-10 mb-2">
+            <p class="font-bold text-sm">G-Drive</p>
+            <p class="text-[10px] text-emerald-600 font-bold">TERHUBUNG</p>
         </div>
-        <nav class="space-y-4">
-            <a href="#" class="flex items-center gap-3 text-indigo-600 font-semibold bg-indigo-50 p-3 rounded-xl">
-                <i class="fas fa-th-large"></i> Dashboard
-            </a>
-            <a href="#" class="flex items-center gap-3 text-slate-500 p-3 hover:bg-slate-50 rounded-xl transition">
-                <i class="fas fa-folder"></i> File Saya
-            </a>
-        </nav>
+
+        <div id="btn-terabox" onclick="connectCloud('TeraBox', 1024)" class="bg-white p-4 rounded-2xl border border-slate-200 hover:border-indigo-400 cursor-pointer transition">
+            <img src="https://m.terabox.com/static/images/logo.png" class="w-10 mb-2">
+            <p class="font-bold text-sm">TeraBox</p>
+            <p class="text-[10px] text-slate-400">+1 TB Gratis</p>
+        </div>
+
+        <div onclick="connectCloud('Mega', 20)" class="bg-white p-4 rounded-2xl border border-slate-200 hover:border-indigo-400 cursor-pointer transition">
+            <i class="fab fa-m text-red-600 text-2xl mb-2"></i>
+            <p class="font-bold text-sm">Mega.nz</p>
+            <p class="text-[10px] text-slate-400">+20 GB Gratis</p>
+        </div>
+
+        <div onclick="connectCloud('MediaFire', 10)" class="bg-white p-4 rounded-2xl border border-slate-200 hover:border-indigo-400 cursor-pointer transition">
+            <i class="fas fa-fire text-orange-500 text-2xl mb-2"></i>
+            <p class="font-bold text-sm">MediaFire</p>
+            <p class="text-[10px] text-slate-400">+10 GB Gratis</p>
+        </div>
+
     </div>
-
-    <div class="flex-1 p-4 md:p-10">
-        <header class="flex justify-between items-center mb-8">
-            <h2 class="text-2xl font-bold text-slate-800 text-left">Ringkasan Penyimpanan</h2>
-            <div class="flex items-center gap-4">
-                <span id="user-email" class="text-sm text-slate-500">user@gmail.com</span>
-                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold">U</div>
-            </div>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 md:col-span-2 text-left">
-                <div class="flex justify-between items-end mb-4">
-                    <div>
-                        <p class="text-slate-400 text-sm">Total Kapasitas Terpadu</p>
-                        <h3 class="text-3xl font-bold text-slate-800" id="total-text">15 GB</h3>
-                    </div>
-                    <p class="text-slate-500 text-sm" id="usage-text">0 GB digunakan</p>
-                </div>
-                <div class="w-full bg-slate-100 h-4 rounded-full overflow-hidden flex">
-                    <div id="bar-gdrive" class="bg-blue-500 h-full transition-all duration-700" style="width: 0%"></div>
-                    <div id="bar-terabox" class="bg-purple-500 h-full transition-all duration-700" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <div id="terabox-card" class="bg-indigo-600 p-6 rounded-3xl shadow-lg text-white flex flex-col justify-center items-center text-center transition-all hover:scale-105">
-                <i class="fas fa-rocket text-3xl mb-3"></i>
-                <h4 class="font-bold mb-1">Butuh 1 TB Gratis?</h4>
-                <button onclick="activateTeraBox()" class="mt-3 bg-white text-indigo-600 px-6 py-2 rounded-xl font-bold text-sm">
-                    Hubungkan TeraBox
-                </button>
-            </div>
-        </div>
-
-        <div id="dropzone" class="border-4 border-dashed border-slate-200 rounded-3xl p-20 text-center hover:border-indigo-400 hover:bg-indigo-50/50 transition-all cursor-pointer">
-            <input type="file" id="fileInput" class="hidden" multiple>
-            <i class="fas fa-file-upload text-5xl text-slate-300 mb-4"></i>
-            <p class="text-slate-600 font-semibold">Tarik & Lepas File ke Sini</p>
-            <p class="text-slate-400 text-sm mt-2 font-medium">Sistem akan otomatis mendeteksi storage terbaik untuk Anda</p>
-        </div>
-
-        <div id="file-list" class="mt-10 space-y-3 text-left">
-            </div>
-    </div>
-
-    <script src="app.js"></script>
-</body>
-</html>
+</div>
