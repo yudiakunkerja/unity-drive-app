@@ -1,15 +1,23 @@
 import os
 import json
-from http import HTTPStatus
-
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from lib.services import get_drive_service, get_firestore
-
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 
 # ⚠️ WAJIB: Nama fungsi HARUS 'handler' agar Vercel bisa menjalankannya
 def handler(request):
+    # Import dilakukan DI DALAM fungsi agar Vercel bisa mendeteksi handler
+    from http import HTTPStatus
+    import sys
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    
+    try:
+        from lib.services import get_drive_service, get_firestore
+    except ImportError as e:
+        return (json.dumps({'error': f'Import failed: {str(e)}'}), 500, {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json'
+        })
+
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+    
     headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
