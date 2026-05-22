@@ -8,7 +8,8 @@ from lib.services import get_firestore
 
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 
-def main(request):
+# GANTI 'main' MENJADI 'handler'
+def handler(request):
     headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
