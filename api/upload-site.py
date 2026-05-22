@@ -15,7 +15,8 @@ from lib.utils import add_watermark
 
 FOLDER_ID = os.getenv("FOLDER_ID", "")
 
-def main(request):
+# GANTI 'main' MENJADI 'handler' AGAR VERCEL BISA MENDETEKSINYA
+def handler(request):
     """Vercel Serverless Function for site report upload"""
     
     # CORS headers
