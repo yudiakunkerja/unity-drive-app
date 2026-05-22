@@ -8,7 +8,7 @@ from lib.services import get_drive_service, get_firestore
 
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 
-# GANTI 'main' MENJADI 'handler' AGAR VERCEL BISA MENDETEKSINYA
+# ⚠️ GANTI 'main' MENJADI 'handler' AGAR VERCEL BISA MENDETEKSINYA
 def handler(request):
     headers = {
         'Access-Control-Allow-Origin': '*',
@@ -16,7 +16,7 @@ def handler(request):
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     }
     
-    # Handle preflight request (CORS)
+    # Handle preflight (CORS)
     if request.method == 'OPTIONS':
         return ('', 204, headers)
     
@@ -24,14 +24,14 @@ def handler(request):
         return (json.dumps({'error': 'Method not allowed'}), 405, headers)
     
     try:
-        # Cek Password Admin
+        # Cek Authorization
         auth_header = request.headers.get('Authorization', '')
         token = auth_header.replace('Bearer ', '') if auth_header else ''
         
         if token != ADMIN_PASSWORD:
             return (json.dumps({'error': 'Unauthorized'}), 401, headers)
         
-        # Ambil ID dari Query String (?id=...) atau URL Path
+        # Ambil report_id dari query string atau URL path
         report_id = request.args.get('id') or request.path.split('/')[-1]
         if not report_id:
             return (json.dumps({'error': 'Report ID required'}), 400, headers)
@@ -45,18 +45,18 @@ def handler(request):
         
         data = doc.to_dict()
         
-        # 1. Hapus file dari Google Drive
+        # 1. Hapus dari Google Drive
         try:
             drive = get_drive_service()
             drive.files().delete(fileId=data['drive_id']).execute()
-            print(f"✅ Deleted from Drive: {data.get('filename')}")
+            print(f"🗑️ Deleted from Drive: {data.get('filename')}")
         except Exception as e:
             print(f"⚠️ Failed to delete from Drive: {e}")
-            # Lanjutkan proses walaupun gagal hapus di Drive
+            # Lanjutkan walaupun gagal hapus di Drive
         
-        # 2. Hapus data dari Firestore
+        # 2. Hapus dari Firestore
         doc_ref.delete()
-        print(f"✅ Deleted from Firestore: {report_id}")
+        print(f"🗑️ Deleted from Firestore: {report_id}")
         
         return (json.dumps({'success': True, 'message': 'Report deleted'}), 200, {**headers, 'Content-Type': 'application/json'})
         
