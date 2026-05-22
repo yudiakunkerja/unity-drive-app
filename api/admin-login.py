@@ -1,16 +1,18 @@
 import os
 import json
-from http import HTTPStatus
 
+# Ambil password dari Environment Variables
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 
-def main(request):
+# GANTI 'main' MENJADI 'handler'
+def handler(request):
     headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     }
     
+    # Handle preflight (CORS)
     if request.method == 'OPTIONS':
         return ('', 204, headers)
     
