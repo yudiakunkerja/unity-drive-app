@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sistem Pelaporan - PT. Nusantara Mineral</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="manifest" href="/manifest.json">
+</head>
+<body class="bg-gradient-to-br from-teal-600 to-teal-800 min-h-screen">
+  <div class="container mx-auto px-4 py-8 max-w-2xl">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 mb-6 text-center">
+      <h1 class="text-3xl font-bold text-teal-800">Sistem Pelaporan Lapangan</h1>
+      <p class="text-gray-600 mt-2">PT. NUSANTARA MINERAL - SUKSES ABADI</p>
+    </div>
+
+    <div id="gps-status" class="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6 rounded">
+      <p class="text-yellow-700">📍 Mendapatkan lokasi GPS...</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+      <div class="flex space-x-4 mb-6">
+        <button onclick="switchTab('site')" id="tab-site" class="flex-1 bg-teal-600 text-white py-3 px-6 rounded-lg font-semibold">📷 Laporan Site</button>
+        <button onclick="switchTab('doc')" id="tab-doc" class="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold">📄 Laporan Dokumen</button>
+      </div>
+
+      <!-- Form Site -->
+      <div id="form-site" class="space-y-4">
+        <div class="bg-blue-50 p-4 rounded-lg"><p class="text-blue-800 text-sm">📍 Foto akan otomatis diberi watermark waktu dan lokasi</p></div>
+        <textarea id="site-note" rows="3" class="w-full px-4 py-2 border rounded-lg" placeholder="Catatan lapangan..."></textarea>
+        <div class="grid grid-cols-2 gap-4">
+          <input type="text" id="site-lat" readonly class="w-full px-4 py-2 bg-gray-100 border rounded-lg" placeholder="Latitude">
+          <input type="text" id="site-lon" readonly class="w-full px-4 py-2 bg-gray-100 border rounded-lg" placeholder="Longitude">
+        </div>
+        <input type="file" id="site-file" accept="image/*" capture="environment" class="w-full px-4 py-2 border rounded-lg">
+        <button onclick="submitSite()" class="w-full bg-teal-600 text-white py-3 rounded-lg font-bold">📤 KIRIM LAPORAN SITE</button>
+      </div>
+
+      <!-- Form Doc -->
+      <div id="form-doc" class="space-y-4 hidden">
+        <div class="bg-green-50 p-4 rounded-lg">
+          <p class="text-green-800 text-sm">📎 Upload nota, invoice, atau dokumen pendukung</p>
+          <p class="text-green-700 text-xs mt-1">💡 Upload >5 file akan otomatis di-ZIP | ⚠️ Max total 4MB</p>
+        </div>
+        <textarea id="doc-note" rows="3" class="w-full px-4 py-2 border rounded-lg" placeholder="Keterangan dokumen..."></textarea>
+        <input type="text" id="doc-nominal" class="w-full px-4 py-2 border rounded-lg" placeholder="Nominal (Rp) - Opsional">
+        <input type="file" id="doc-files" multiple class="w-full px-4 py-2 border rounded-lg">
+        <p id="file-count" class="text-sm text-gray-600"></p>
+        <button onclick="submitDoc()" class="w-full bg-teal-600 text-white py-3 rounded-lg font-bold">📤 KIRIM DOKUMEN</button>
+      </div>
+    </div>
+
+    <div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-2xl text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+        <p class="text-gray-700 font-semibold">Mengirim data...</p>
+      </div>
+    </div>
+
+    <div class="text-center text-white text-sm mt-6">
+      <p>© 2026 PT. Nusantara Mineral - Sukses Abadi</p>
+      <a href="/admin" class="underline mt-2 inline-block">Login Admin</a>
+    </div>
+  </div>
+
+  <script>
+    let currentLat = null, currentLon = null;
+
+    window.onload = function() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            currentLat = pos.coords.latitude;
+            currentLon = pos.coords.longitude;
+            document.getElementById('site-lat').value = currentLat.toFixed(6);
+            document.getElementById('site-lon').value = currentLon.toFixed(6);
+            document.getElementById('gps-status').className = 'bg-green-100 border-l-4 border-green-500 p-4 mb-6 rounded';
+            document.getElementById('gps-status').innerHTML = `<p class="text-green-700">✅ Lokasi: ${currentLat.toFixed(4)}, ${currentLon.toFixed(4)}</p>`;
+          },
+          () => {
+            document.getElementById('gps-status').innerHTML = '<p class="text-red-700">❌ Izinkan akses lokasi browser</p>';
+          }
+        );
+      }
+    };
+
+    function switchTab(tab) {
+      document.getElementById('form-site').classList.toggle('hidden', tab !== 'site');
+      document.getElementById('form-doc').classList.toggle('hidden', tab !== 'doc');
+      document.getElementById('tab-site').classList.toggle('bg-teal-600', tab === 'site');
+      document.getElementById('tab-site').classList.toggle('text-white', tab === 'site');
+      document.getElementById('tab-doc').classList.toggle('bg-teal-600', tab === 'doc');
+      document.getElementById('tab-doc').classList.toggle('text-white', tab === 'doc');
+    }
+
+    document.getElementById('doc-files').addEventListener('change', (e) => {
+      const count = e.target.files.length;
+      document.getElementById('file-count').textContent = count ? `${count} file dipilih` : '';
+    });
+
+    async function submitSite() {
+      const file = document.getElementById('site-file').files[0];
+      const note = document.getElementById('site-note').value;
+      if (!file) return alert('Pilih foto dulu!');
+      if (!currentLat) return alert('GPS belum tersedia!');
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('note', note);
+      formData.append('latitude', currentLat);
+      formData.append('longitude', currentLon);
+
+      await upload(formData, '/api/upload-site');
+    }
+
+    async function submitDoc() {
+      const files = document.getElementById('doc-files').files;
+      const note = document.getElementById('doc-note').value;
+      const nominal = document.getElementById('doc-nominal').value;
+      if (!files.length) return alert('Pilih file dulu!');
+
+      const formData = new FormData();
+      for (let f of files) formData.append('files', f);
+      formData.append('note', note);
+      formData.append('nominal', nominal);
+
+      await upload(formData, '/api/upload-doc');
+    }
+
+    async function upload(formData, endpoint) {
+      document.getElementById('loading').classList.remove('hidden');
+      try {
+        const res = await fetch(endpoint, { method: 'POST', body: formData });
+        const result = await res.json();
+        if (res.ok) {
+          alert('✅ ' + result.message);
+          location.reload();
+        } else {
+          alert('❌ Error: ' + (result.error || 'Unknown error'));
+        }
+      } catch (e) {
+        alert('❌ Network error: ' + e.message);
+      } finally {
+        document.getElementById('loading').classList.add('hidden');
+      }
+    }
+  </script>
+</body>
+</html>
