@@ -11,7 +11,8 @@ from lib.utils import create_zip
 
 FOLDER_ID = os.getenv("FOLDER_ID", "")
 
-def main(request):
+# GANTI 'main' MENJADI 'handler'
+def handler(request):
     """Vercel Serverless Function for document upload"""
     
     headers = {
@@ -43,7 +44,7 @@ def main(request):
             total_size += len(content)
             files_data.append((file.filename, content))
         
-        # Vercel limit: 4.5MB total
+        # Vercel limit: 4.5MB total (safety limit set to 4MB)
         if total_size > 4 * 1024 * 1024:
             return (json.dumps({'error': 'Total file size exceeds 4MB limit'}), 413, headers)
         
