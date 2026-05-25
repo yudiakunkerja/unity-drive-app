@@ -8,9 +8,6 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- ✅ Parse SDK for Back4App - WAJIB DITAMBAHKAN -->
-  <script src="https://npm.jsdelivr.net/parse@2.19.0/parse.min.js"></script>
-  
   <link rel="manifest" href="/manifest.json">
 </head>
 <body class="bg-gradient-to-br from-teal-600 to-teal-800 min-h-screen">
@@ -72,15 +69,8 @@
   </div>
 
   <script>
-    // ================= ✅ PARSE SDK INIT - BACK4APP =================
-    // ⚠️ GANTI DENGAN NILAI DARI DASHBOARD BACK4APP ANDA
-    Parse.initialize("AUUaxpxgKJYy6EskyNzwaj6yEyttE38vN5DeW1dx", "Hwg1SAxyb8b6tOtCYUwO2PnAB5kZ1wZti8VTkbFA");
-    Parse.serverURL = "https://parseapi.back4app.com/";
-    
-    // Debug: Cek apakah Parse loaded
-    console.log('✅ Parse SDK loaded:', typeof Parse !== 'undefined');
-    console.log('✅ Server URL:', Parse.serverURL);
-
+    // ================= CONFIG =================
+    const API_BASE = ''; // Path relatif untuk Vercel
     let currentLat = null, currentLon = null;
 
     // ================= GPS =================
@@ -94,10 +84,9 @@
             document.getElementById('site-lon').value = currentLon.toFixed(6);
             document.getElementById('gps-status').className = 'bg-green-100 border-l-4 border-green-500 p-4 mb-6 rounded';
             document.getElementById('gps-status').innerHTML = `<p class="text-green-700">✅ Lokasi: ${currentLat.toFixed(4)}, ${currentLon.toFixed(4)}</p>`;
-            console.log('✅ GPS acquired:', currentLat, currentLon);
           },
           (err) => {
-            console.error('❌ GPS error:', err);
+            console.error('GPS error:', err);
             document.getElementById('gps-status').innerHTML = '<p class="text-red-700">❌ Izinkan akses lokasi browser</p>';
           },
           { enableHighAccuracy: true, timeout: 10000 }
@@ -110,8 +99,6 @@
       const isSite = tab === 'site';
       document.getElementById('form-site').classList.toggle('hidden', !isSite);
       document.getElementById('form-doc').classList.toggle('hidden', isSite);
-      
-      // Update button styles
       document.getElementById('tab-site').className = `flex-1 py-3 px-6 rounded-lg font-semibold transition ${isSite ? 'bg-teal-600 text-white hover:bg-teal-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
       document.getElementById('tab-doc').className = `flex-1 py-3 px-6 rounded-lg font-semibold transition ${!isSite ? 'bg-teal-600 text-white hover:bg-teal-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
     }
@@ -126,17 +113,13 @@
     function fileToBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => {
-          // Remove data:image/...;base64, prefix
-          const base64 = reader.result.split(',')[1];
-          resolve(base64);
-        };
+        reader.onload = () => resolve(reader.result.split(',')[1]);
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
     }
 
-    // ================= ✅ UPLOAD SITE REPORT =================
+    // ================= ✅ UPLOAD SITE REPORT (FETCH TO VERCEL) =================
     async function submitSite() {
       const fileInput = document.getElementById('site-file');
       const note = document.getElementById('site-note').value.trim();
@@ -149,65 +132,41 @@
       
       try {
         const file = fileInput.files[0];
-        console.log('📤 Uploading file:', file.name, file.type, file.size);
         
-        // Validasi ukuran file (max 4MB)
-        if (file.size > 4 * 1024 * 1024) {
-          throw new Error('File terlalu besar! Maksimal 4MB.');
-        }
-        
-        // Validasi tipe file
-        if (!file.type.startsWith('image/')) {
-          throw new Error('Hanya file gambar yang diperbolehkan.');
-        }
+        if (file.size > 4 * 1024 * 1024) throw new Error('File terlalu besar! Maksimal 4MB.');
+        if (!file.type.startsWith('image/')) throw new Error('Hanya file gambar yang diperbolehkan.');
 
-        // Convert file to base64
-        const base64 = await fileToBase64(file);
-        console.log('✅ File converted to base64');
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('note', note);
+        formData.append('latitude', currentLat);
+        formData.append('longitude', currentLon);
 
-        // ✅ Call Back4App Cloud Function (BUKAN fetch!)
-        console.log('🔄 Calling Parse.Cloud.run("uploadSite")...');
-        const result = await Parse.Cloud.run('uploadSite', {
-          note: note,
-          latitude: currentLat,
-          longitude: currentLon,
-          file: {
-            name: file.name,
-            base64: base64,
-            type: file.type
-          }
+        // ✅ Fetch ke Vercel endpoint (BUKAN Parse.Cloud.run)
+        const res = await fetch(`${API_BASE}/api/upload-site`, {
+          method: 'POST',
+          body: formData
         });
 
-        console.log('✅ Upload success:', result);
-        alert('✅ ' + (result.message || 'Laporan Site berhasil dikirim!'));
+        const result = await res.json();
         
-        // Reset form
-        fileInput.value = '';
-        document.getElementById('site-note').value = '';
-        
-      } catch (e) {
-        console.error('❌ Upload error:', e);
-        console.error('Error name:', e.name);
-        console.error('Error message:', e.message);
-        console.error('Error code:', e.code);
-        
-        // Friendly error messages
-        let errorMsg = e.message || 'Upload gagal';
-        if (e.code === 141) {
-          errorMsg = 'Cloud Function error. Cek Back4App Console.';
-        } else if (e.code === 100) {
-          errorMsg = 'Network error. Cek koneksi internet.';
-        } else if (e.message?.includes('Unauthorized')) {
-          errorMsg = 'Akses ditolak. Cek App ID & JS Key.';
+        if (res.ok) {
+          alert('✅ ' + (result.message || 'Laporan Site berhasil dikirim!'));
+          fileInput.value = '';
+          document.getElementById('site-note').value = '';
+        } else {
+          throw new Error(result.error || 'Upload gagal');
         }
         
-        alert('❌ Error: ' + errorMsg);
+      } catch (e) {
+        console.error('Upload error:', e);
+        alert('❌ Error: ' + e.message);
       } finally {
         loading.classList.add('hidden');
       }
     }
 
-    // ================= ✅ UPLOAD DOCUMENT =================
+    // ================= ✅ UPLOAD DOCUMENT (FETCH TO VERCEL) =================
     async function submitDoc() {
       const filesInput = document.getElementById('doc-files');
       const note = document.getElementById('doc-note').value.trim();
@@ -219,43 +178,39 @@
       loading.classList.remove('hidden');
       
       try {
-        // Convert files to base64 array
-        const files = [];
+        const formData = new FormData();
         let totalSize = 0;
         
         for (let f of filesInput.files) {
           totalSize += f.size;
-          if (totalSize > 4 * 1024 * 1024) {
-            throw new Error('Total file melebihi 4MB!');
-          }
-          
-          const base64 = await fileToBase64(f);
-          files.push({ name: f.name, base64: base64, type: f.type });
+          if (totalSize > 4 * 1024 * 1024) throw new Error('Total file melebihi 4MB!');
+          formData.append('files', f);
         }
+        
+        formData.append('note', note);
+        formData.append('nominal', nominal);
 
-        console.log('🔄 Calling Parse.Cloud.run("uploadDoc")...');
-        const result = await Parse.Cloud.run('uploadDoc', {
-          note: note,
-          nominal: nominal,
-          files: files
+        // ✅ Fetch ke Vercel endpoint
+        const res = await fetch(`${API_BASE}/api/upload-doc`, {
+          method: 'POST',
+          body: formData
         });
 
-        console.log('✅ Upload success:', result);
-        alert('✅ ' + (result.message || 'Dokumen berhasil dikirim!'));
+        const result = await res.json();
         
-        // Reset form
-        filesInput.value = '';
-        document.getElementById('doc-note').value = '';
-        document.getElementById('doc-nominal').value = '';
-        document.getElementById('file-count').textContent = '';
+        if (res.ok) {
+          alert('✅ ' + (result.message || 'Dokumen berhasil dikirim!'));
+          filesInput.value = '';
+          document.getElementById('doc-note').value = '';
+          document.getElementById('doc-nominal').value = '';
+          document.getElementById('file-count').textContent = '';
+        } else {
+          throw new Error(result.error || 'Upload gagal');
+        }
         
       } catch (e) {
-        console.error('❌ Upload error:', e);
-        let errorMsg = e.message || 'Upload gagal';
-        if (e.code === 141) {
-          errorMsg = 'Cloud Function error. Cek Back4App Console.';
-        }
-        alert('❌ Error: ' + errorMsg);
+        console.error('Upload error:', e);
+        alert('❌ Error: ' + e.message);
       } finally {
         loading.classList.add('hidden');
       }
