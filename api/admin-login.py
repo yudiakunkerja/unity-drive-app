@@ -1,19 +1,56 @@
 import os
 import json
 import hashlib
-import uuid
 import datetime
+import hmac
+import time
+import base64
+
 from lib.services import get_firestore
 
-def hash_password(password: str, salt: str = None):
-    """Hash password dengan SHA-256 & salt unik"""
-    if salt is None:
-        salt = os.urandom(16).hex()
-    pwd_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000)
-    return pwd_hash.hex(), salt
+# ================= TOKEN UTILS (Otomatis Expiry 24 Jam) =================
+def _get_secret_key() -> str:
+    """Ambil secret key dari env, atau generate aman untuk development"""
+    return os.getenv("TOKEN_SECRET_KEY", os.urandom(32).hex())
 
+def create_token(username: str) -> str:
+    """Buat token terenkripsi yang otomatis expire setelah 24 jam"""
+    expires_at = int(time.time()) + 86400  # 24 jam dalam detik
+    payload = f"{username}:{expires_at}"
+    signature = hmac.new(
+        _get_secret_key().encode(), 
+        payload.encode(), 
+        hashlib.sha256
+    ).hexdigest()
+    # Format: base64(payload.signature)
+    return base64.urlsafe_b64encode(f"{payload}.{signature}".encode()).decode()
+
+def verify_token(token: str) -> dict | None:
+    """Verifikasi token & kembalikan data user jika valid & belum expired"""
+    try:
+        decoded = base64.urlsafe_b64decode(token).decode()
+        payload, sig = decoded.rsplit('.', 1)
+        
+        expected_sig = hmac.new(
+            _get_secret_key().encode(), 
+            payload.encode(), 
+            hashlib.sha256
+        ).hexdigest()
+        
+        if not hmac.compare_digest(sig, expected_sig):
+            return None
+            
+        username, expires_at = payload.split(':')
+        if int(time.time()) > int(expires_at):
+            return None
+            
+        return {"username": username, "expires_at": int(expires_at)}
+    except Exception:
+        return None
+
+# ================= AUTH HANDLER =================
 def handler(request):
-    """Unified Auth Handler: Login & Register dengan 5x gagal -> auto delete"""
+    """Unified Auth Handler: Register, Login, Token Management"""
     
     # 1. Dynamic CORS
     allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
@@ -56,7 +93,10 @@ def handler(request):
             if doc.exists:
                 return (json.dumps({'error': 'Username sudah terdaftar'}), 409, headers)
                 
-            pwd_hash, salt = hash_password(password)
+            # Hash password dengan salt unik
+            salt = os.urandom(16).hex()
+            pwd_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000).hex()
+            
             doc_ref.set({
                 'username': username,
                 'password_hash': pwd_hash,
@@ -73,11 +113,11 @@ def handler(request):
         # ================= LOGIN =================
         elif action == 'login':
             if not doc.exists:
-                # Gunakan pesan generik untuk mencegah enumerasi username
                 return (json.dumps({'error': 'Username atau password salah'}), 401, headers)
                 
             user_data = doc.to_dict()
             
+            # Cek batas 5x gagal
             if user_data.get('failed_attempts', 0) >= 5:
                 doc_ref.delete()
                 return (json.dumps({
@@ -85,7 +125,8 @@ def handler(request):
                 }), 403, headers)
                 
             # Verifikasi password
-            calc_hash, _ = hash_password(password, user_data['salt'])
+            calc_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), user_data['salt'].encode('utf-8'), 100000).hex()
+            
             if calc_hash != user_data['password_hash']:
                 new_attempts = user_data.get('failed_attempts', 0) + 1
                 if new_attempts >= 5:
@@ -97,22 +138,22 @@ def handler(request):
                     doc_ref.update({'failed_attempts': new_attempts})
                     return (json.dumps({'error': 'Username atau password salah'}), 401, headers)
                     
-            # Login sukses
-            token = uuid.uuid4().hex  # Token unik per sesi
-            doc_ref.update({'failed_attempts': 0}) # Reset counter
+            # Login sukses → Reset counter & generate token 24 jam
+            doc_ref.update({'failed_attempts': 0})
+            token = create_token(username)
             
             return (json.dumps({
                 'success': True,
                 'message': 'Login berhasil',
                 'token': token,
-                'username': username
+                'username': username,
+                'expires_in_hours': 24
             }), 200, {**headers, 'Content-Type': 'application/json'})
             
         else:
-            return (json.dumps({'error': 'Invalid action type. Use "login" or "register".'}), 400, headers)
+            return (json.dumps({'error': 'Invalid action. Gunakan "login" atau "register".'}), 400, headers)
             
     except Exception as e:
-        # Sanitized error message
         print(f"Auth error: {e}")
         try:
             db = get_firestore()
