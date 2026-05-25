@@ -4,7 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sistem Pelaporan - PT. Nusantara Mineral</title>
+  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- ✅ Parse SDK for Back4App - WAJIB DITAMBAHKAN -->
+  <script src="https://npm.jsdelivr.net/parse@2.19.0/parse.min.js"></script>
+  
   <link rel="manifest" href="/manifest.json">
 </head>
 <body class="bg-gradient-to-br from-teal-600 to-teal-800 min-h-screen">
@@ -20,20 +26,22 @@
 
     <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
       <div class="flex space-x-4 mb-6">
-        <button onclick="switchTab('site')" id="tab-site" class="flex-1 bg-teal-600 text-white py-3 px-6 rounded-lg font-semibold">📷 Laporan Site</button>
-        <button onclick="switchTab('doc')" id="tab-doc" class="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold">📄 Laporan Dokumen</button>
+        <button onclick="switchTab('site')" id="tab-site" class="flex-1 bg-teal-600 text-white py-3 px-6 rounded-lg font-semibold transition hover:bg-teal-700">📷 Laporan Site</button>
+        <button onclick="switchTab('doc')" id="tab-doc" class="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold transition hover:bg-gray-300">📄 Laporan Dokumen</button>
       </div>
 
       <!-- Form Site -->
       <div id="form-site" class="space-y-4">
-        <div class="bg-blue-50 p-4 rounded-lg"><p class="text-blue-800 text-sm">📍 Foto akan otomatis diberi watermark waktu dan lokasi</p></div>
-        <textarea id="site-note" rows="3" class="w-full px-4 py-2 border rounded-lg" placeholder="Catatan lapangan..."></textarea>
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <p class="text-blue-800 text-sm">📍 Foto akan otomatis diberi watermark waktu dan lokasi</p>
+        </div>
+        <textarea id="site-note" rows="3" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition" placeholder="Catatan lapangan..."></textarea>
         <div class="grid grid-cols-2 gap-4">
           <input type="text" id="site-lat" readonly class="w-full px-4 py-2 bg-gray-100 border rounded-lg" placeholder="Latitude">
           <input type="text" id="site-lon" readonly class="w-full px-4 py-2 bg-gray-100 border rounded-lg" placeholder="Longitude">
         </div>
-        <input type="file" id="site-file" accept="image/*" capture="environment" class="w-full px-4 py-2 border rounded-lg">
-        <button onclick="submitSite()" class="w-full bg-teal-600 text-white py-3 rounded-lg font-bold">📤 KIRIM LAPORAN SITE</button>
+        <input type="file" id="site-file" accept="image/*" capture="environment" class="w-full px-4 py-2 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 transition">
+        <button onclick="submitSite()" class="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-lg font-bold transition">📤 KIRIM LAPORAN SITE</button>
       </div>
 
       <!-- Form Doc -->
@@ -42,11 +50,11 @@
           <p class="text-green-800 text-sm">📎 Upload nota, invoice, atau dokumen pendukung</p>
           <p class="text-green-700 text-xs mt-1">💡 Upload >5 file akan otomatis di-ZIP | ⚠️ Max total 4MB</p>
         </div>
-        <textarea id="doc-note" rows="3" class="w-full px-4 py-2 border rounded-lg" placeholder="Keterangan dokumen..."></textarea>
-        <input type="text" id="doc-nominal" class="w-full px-4 py-2 border rounded-lg" placeholder="Nominal (Rp) - Opsional">
-        <input type="file" id="doc-files" multiple class="w-full px-4 py-2 border rounded-lg">
+        <textarea id="doc-note" rows="3" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition" placeholder="Keterangan dokumen..."></textarea>
+        <input type="text" id="doc-nominal" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition" placeholder="Nominal (Rp) - Opsional">
+        <input type="file" id="doc-files" multiple class="w-full px-4 py-2 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 transition">
         <p id="file-count" class="text-sm text-gray-600"></p>
-        <button onclick="submitDoc()" class="w-full bg-teal-600 text-white py-3 rounded-lg font-bold">📤 KIRIM DOKUMEN</button>
+        <button onclick="submitDoc()" class="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-lg font-bold transition">📤 KIRIM DOKUMEN</button>
       </div>
     </div>
 
@@ -59,13 +67,23 @@
 
     <div class="text-center text-white text-sm mt-6">
       <p>© 2026 PT. Nusantara Mineral - Sukses Abadi</p>
-      <a href="/admin" class="underline mt-2 inline-block">Login Admin</a>
+      <a href="admin.html" class="underline mt-2 inline-block hover:text-teal-200 transition">Login Admin</a>
     </div>
   </div>
 
   <script>
+    // ================= ✅ PARSE SDK INIT - BACK4APP =================
+    // ⚠️ GANTI DENGAN NILAI DARI DASHBOARD BACK4APP ANDA
+    Parse.initialize("AUUaxpxgKJYy6EskyNzwaj6yEyttE38vN5DeW1dx", "Hwg1SAxyb8b6tOtCYUwO2PnAB5kZ1wZti8VTkbFA");
+    Parse.serverURL = "https://parseapi.back4app.com/";
+    
+    // Debug: Cek apakah Parse loaded
+    console.log('✅ Parse SDK loaded:', typeof Parse !== 'undefined');
+    console.log('✅ Server URL:', Parse.serverURL);
+
     let currentLat = null, currentLon = null;
 
+    // ================= GPS =================
     window.onload = function() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -76,72 +94,170 @@
             document.getElementById('site-lon').value = currentLon.toFixed(6);
             document.getElementById('gps-status').className = 'bg-green-100 border-l-4 border-green-500 p-4 mb-6 rounded';
             document.getElementById('gps-status').innerHTML = `<p class="text-green-700">✅ Lokasi: ${currentLat.toFixed(4)}, ${currentLon.toFixed(4)}</p>`;
+            console.log('✅ GPS acquired:', currentLat, currentLon);
           },
-          () => {
+          (err) => {
+            console.error('❌ GPS error:', err);
             document.getElementById('gps-status').innerHTML = '<p class="text-red-700">❌ Izinkan akses lokasi browser</p>';
-          }
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
         );
       }
     };
 
+    // ================= TAB SWITCHER =================
     function switchTab(tab) {
-      document.getElementById('form-site').classList.toggle('hidden', tab !== 'site');
-      document.getElementById('form-doc').classList.toggle('hidden', tab !== 'doc');
-      document.getElementById('tab-site').classList.toggle('bg-teal-600', tab === 'site');
-      document.getElementById('tab-site').classList.toggle('text-white', tab === 'site');
-      document.getElementById('tab-doc').classList.toggle('bg-teal-600', tab === 'doc');
-      document.getElementById('tab-doc').classList.toggle('text-white', tab === 'doc');
+      const isSite = tab === 'site';
+      document.getElementById('form-site').classList.toggle('hidden', !isSite);
+      document.getElementById('form-doc').classList.toggle('hidden', isSite);
+      
+      // Update button styles
+      document.getElementById('tab-site').className = `flex-1 py-3 px-6 rounded-lg font-semibold transition ${isSite ? 'bg-teal-600 text-white hover:bg-teal-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
+      document.getElementById('tab-doc').className = `flex-1 py-3 px-6 rounded-lg font-semibold transition ${!isSite ? 'bg-teal-600 text-white hover:bg-teal-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
     }
 
+    // ================= FILE COUNT =================
     document.getElementById('doc-files').addEventListener('change', (e) => {
       const count = e.target.files.length;
       document.getElementById('file-count').textContent = count ? `${count} file dipilih` : '';
     });
 
+    // ================= HELPER: File to Base64 =================
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          // Remove data:image/...;base64, prefix
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ================= ✅ UPLOAD SITE REPORT =================
     async function submitSite() {
-      const file = document.getElementById('site-file').files[0];
-      const note = document.getElementById('site-note').value;
-      if (!file) return alert('Pilih foto dulu!');
-      if (!currentLat) return alert('GPS belum tersedia!');
+      const fileInput = document.getElementById('site-file');
+      const note = document.getElementById('site-note').value.trim();
+      
+      if (!fileInput.files[0]) return alert('⚠️ Pilih foto dulu!');
+      if (!currentLat) return alert('⚠️ GPS belum tersedia, tunggu sebentar...');
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('note', note);
-      formData.append('latitude', currentLat);
-      formData.append('longitude', currentLon);
-
-      await upload(formData, '/api/upload-site');
-    }
-
-    async function submitDoc() {
-      const files = document.getElementById('doc-files').files;
-      const note = document.getElementById('doc-note').value;
-      const nominal = document.getElementById('doc-nominal').value;
-      if (!files.length) return alert('Pilih file dulu!');
-
-      const formData = new FormData();
-      for (let f of files) formData.append('files', f);
-      formData.append('note', note);
-      formData.append('nominal', nominal);
-
-      await upload(formData, '/api/upload-doc');
-    }
-
-    async function upload(formData, endpoint) {
-      document.getElementById('loading').classList.remove('hidden');
+      const loading = document.getElementById('loading');
+      loading.classList.remove('hidden');
+      
       try {
-        const res = await fetch(endpoint, { method: 'POST', body: formData });
-        const result = await res.json();
-        if (res.ok) {
-          alert('✅ ' + result.message);
-          location.reload();
-        } else {
-          alert('❌ Error: ' + (result.error || 'Unknown error'));
+        const file = fileInput.files[0];
+        console.log('📤 Uploading file:', file.name, file.type, file.size);
+        
+        // Validasi ukuran file (max 4MB)
+        if (file.size > 4 * 1024 * 1024) {
+          throw new Error('File terlalu besar! Maksimal 4MB.');
         }
+        
+        // Validasi tipe file
+        if (!file.type.startsWith('image/')) {
+          throw new Error('Hanya file gambar yang diperbolehkan.');
+        }
+
+        // Convert file to base64
+        const base64 = await fileToBase64(file);
+        console.log('✅ File converted to base64');
+
+        // ✅ Call Back4App Cloud Function (BUKAN fetch!)
+        console.log('🔄 Calling Parse.Cloud.run("uploadSite")...');
+        const result = await Parse.Cloud.run('uploadSite', {
+          note: note,
+          latitude: currentLat,
+          longitude: currentLon,
+          file: {
+            name: file.name,
+            base64: base64,
+            type: file.type
+          }
+        });
+
+        console.log('✅ Upload success:', result);
+        alert('✅ ' + (result.message || 'Laporan Site berhasil dikirim!'));
+        
+        // Reset form
+        fileInput.value = '';
+        document.getElementById('site-note').value = '';
+        
       } catch (e) {
-        alert('❌ Network error: ' + e.message);
+        console.error('❌ Upload error:', e);
+        console.error('Error name:', e.name);
+        console.error('Error message:', e.message);
+        console.error('Error code:', e.code);
+        
+        // Friendly error messages
+        let errorMsg = e.message || 'Upload gagal';
+        if (e.code === 141) {
+          errorMsg = 'Cloud Function error. Cek Back4App Console.';
+        } else if (e.code === 100) {
+          errorMsg = 'Network error. Cek koneksi internet.';
+        } else if (e.message?.includes('Unauthorized')) {
+          errorMsg = 'Akses ditolak. Cek App ID & JS Key.';
+        }
+        
+        alert('❌ Error: ' + errorMsg);
       } finally {
-        document.getElementById('loading').classList.add('hidden');
+        loading.classList.add('hidden');
+      }
+    }
+
+    // ================= ✅ UPLOAD DOCUMENT =================
+    async function submitDoc() {
+      const filesInput = document.getElementById('doc-files');
+      const note = document.getElementById('doc-note').value.trim();
+      const nominal = document.getElementById('doc-nominal').value.trim();
+      
+      if (!filesInput.files.length) return alert('⚠️ Pilih file dulu!');
+
+      const loading = document.getElementById('loading');
+      loading.classList.remove('hidden');
+      
+      try {
+        // Convert files to base64 array
+        const files = [];
+        let totalSize = 0;
+        
+        for (let f of filesInput.files) {
+          totalSize += f.size;
+          if (totalSize > 4 * 1024 * 1024) {
+            throw new Error('Total file melebihi 4MB!');
+          }
+          
+          const base64 = await fileToBase64(f);
+          files.push({ name: f.name, base64: base64, type: f.type });
+        }
+
+        console.log('🔄 Calling Parse.Cloud.run("uploadDoc")...');
+        const result = await Parse.Cloud.run('uploadDoc', {
+          note: note,
+          nominal: nominal,
+          files: files
+        });
+
+        console.log('✅ Upload success:', result);
+        alert('✅ ' + (result.message || 'Dokumen berhasil dikirim!'));
+        
+        // Reset form
+        filesInput.value = '';
+        document.getElementById('doc-note').value = '';
+        document.getElementById('doc-nominal').value = '';
+        document.getElementById('file-count').textContent = '';
+        
+      } catch (e) {
+        console.error('❌ Upload error:', e);
+        let errorMsg = e.message || 'Upload gagal';
+        if (e.code === 141) {
+          errorMsg = 'Cloud Function error. Cek Back4App Console.';
+        }
+        alert('❌ Error: ' + errorMsg);
+      } finally {
+        loading.classList.add('hidden');
       }
     }
   </script>
