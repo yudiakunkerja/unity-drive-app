@@ -1,21 +1,11 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "api/**/*.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "50mb",
-        "runtime": "python3.11"
-      }
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
-    }
+    { "src": "api/index.py", "use": "@vercel/python" },
+    { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1.py" },
+    { "src": "/api/(.*)", "dest": "/api/index.py" },
     { "src": "/static/(.*)", "dest": "/public/static/$1" },
     { "src": "/admin", "dest": "/public/admin.html" },
     { "src": "/(.*)", "dest": "/public/$1" }
@@ -23,7 +13,5 @@
   "crons": [
     { "path": "/api/cleanup", "schedule": "0 0 * * *" }
   ],
-  "env": {
-    "PYTHON_VERSION": "3.11"
-  }
+  "env": { "PYTHON_VERSION": "3.11" }
 }
