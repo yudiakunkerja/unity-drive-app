@@ -1,17 +1,26 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/index.py", "use": "@vercel/python" },
+    { "src": "api/upload-site.py", "use": "@vercel/python" },
+    { "src": "api/upload-doc.py", "use": "@vercel/python" },
+    { "src": "api/admin-login.py", "use": "@vercel/python" },
+    { "src": "api/admin-reports.py", "use": "@vercel/python" },
+    { "src": "api/admin-delete.py", "use": "@vercel/python" },
+    { "src": "api/cleanup.py", "use": "@vercel/python" },
     { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/index.py" },
+    { "src": "/api/upload-site", "dest": "/api/upload-site.py" },
+    { "src": "/api/upload-doc", "dest": "/api/upload-doc.py" },
+    { "src": "/api/admin-login", "dest": "/api/admin-login.py" },
+    { "src": "/api/admin-reports", "dest": "/api/admin-reports.py" },
+    { "src": "/api/admin-delete", "dest": "/api/admin-delete.py" },
+    { "src": "/api/cleanup", "dest": "/api/cleanup.py" },
     { "src": "/static/(.*)", "dest": "/public/static/$1" },
     { "src": "/admin", "dest": "/public/admin.html" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ],
-  "crons": [
-    { "path": "/api/cleanup", "schedule": "0 0 * * *" }
-  ],
-  "env": { "PYTHON_VERSION": "3.11" }
+  "env": {
+    "PYTHON_VERSION": "3.11"
+  }
 }
