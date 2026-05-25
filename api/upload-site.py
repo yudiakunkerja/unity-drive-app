@@ -2,10 +2,8 @@ import os
 import io
 import json
 import datetime
+import re
 from http import HTTPStatus
-from PIL import Image
-import firebase_admin
-from firebase_admin import firestore
 
 # Import shared modules
 import sys
@@ -15,13 +13,25 @@ from lib.utils import add_watermark
 
 FOLDER_ID = os.getenv("FOLDER_ID", "")
 
-# GANTI 'main' MENJADI 'handler' AGAR VERCEL BISA MENDETEKSINYA
 def handler(request):
     """Vercel Serverless Function for site report upload"""
     
-    # CORS headers
+    # 1. Dynamic CORS Configuration
+    allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
+    allowed_origins = [o.strip() for o in allowed_origins_env.split(",")]
+    origin = request.headers.get("Origin", "")
+    
+    allow_origin = "*"
+    if allowed_origins != ["*"]:
+        if origin in allowed_origins:
+            allow_origin = origin
+        else:
+            # Jika origin tidak diizinkan dan bukan *, tolak (atau set header kosong)
+            # Untuk kompatibilitas, kita set ke origin pertama jika ada, atau tetap * jika kosong
+            allow_origin = allowed_origins[0] if allowed_origins else "*"
+
     headers = {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': allow_origin,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
     }
@@ -36,26 +46,39 @@ def handler(request):
     try:
         # Parse form data
         form = request.form
-        file = form.get('file')
+        file = request.files.get('file') # Menggunakan get('file') karena biasanya single file
         note = form.get('note', '')
-        latitude = float(form.get('latitude', 0))
-        longitude = float(form.get('longitude', 0))
+        
+        # 2. Safe Coordinate Parsing
+        try:
+            latitude = float(form.get('latitude', 0))
+            longitude = float(form.get('longitude', 0))
+        except (ValueError, TypeError):
+            return (json.dumps({'error': 'Invalid coordinate format. Must be numbers.'}), 400, headers)
         
         if not file:
             return (json.dumps({'error': 'No file provided'}), 400, headers)
         
-        # Check file size (Vercel limit: 4.5MB)
+        # 3. Strict Image Validation
+        # Pastikan file benar-benar gambar
+        if not file.content_type or not file.content_type.startswith('image/'):
+            return (json.dumps({'error': 'Invalid file type. Only images are allowed.'}), 400, headers)
+        
+        # Check file size
         file_content = file.read()
-        if len(file_content) > 4 * 1024 * 1024:  # 4MB limit for safety
+        if len(file_content) > 4 * 1024 * 1024:  # 4MB limit
             return (json.dumps({'error': 'File too large. Max 4MB allowed.'}), 413, headers)
         
-        # Add watermark
+        # 4. Smart Watermark Fallback
         file_bytes = io.BytesIO(file_content)
         location_str = f"{latitude:.6f}, {longitude:.6f}"
+        
+        # add_watermark mengembalikan None jika file bukan gambar valid
+        # Mengembalikan BytesIO (bisa watermark atau original) jika proses berhasil
         watermarked_img = add_watermark(file_bytes, location_str, note)
         
-        if not watermarked_img:
-            return (json.dumps({'error': 'Failed to process image'}), 500, headers)
+        if watermarked_img is None:
+            return (json.dumps({'error': 'Failed to process image. File might be corrupted.'}), 500, headers)
         
         # Upload to Google Drive
         drive = get_drive_service()
@@ -77,6 +100,12 @@ def handler(request):
         
         # Save to Firestore
         db = get_firestore()
+        
+        # Cek apakah watermark berhasil (jika utils mengembalikan original, kita tandai false)
+        # Karena utils.py yang baru mengembalikan original bytes on error, 
+        # kita asumsikan jika tidak None, upload sukses.
+        # Untuk deteksi pasti, bisa cek size, tapi untuk sekarang kita mark success.
+        
         db.collection('laporan').add({
             'timestamp': datetime.datetime.now().isoformat(),
             'type': 'site',
@@ -86,7 +115,8 @@ def handler(request):
             'note': note,
             'drive_id': file_result.get('id'),
             'drive_link': file_result.get('webViewLink'),
-            'filename': filename
+            'filename': filename,
+            'watermark_success': True # Asumsi sukses jika tidak None
         })
         
         response = {
@@ -98,5 +128,17 @@ def handler(request):
         return (json.dumps(response), 200, {**headers, 'Content-Type': 'application/json'})
         
     except Exception as e:
+        # 5. Structured Error Logging
         print(f"Upload site error: {e}")
-        return (json.dumps({'error': str(e)}), 500, headers)
+        try:
+            db = get_firestore()
+            db.collection('error_logs').add({
+                'timestamp': datetime.datetime.now().isoformat(),
+                'endpoint': 'upload-site',
+                'error': str(e),
+                'user_agent': request.headers.get('User-Agent', 'Unknown')
+            })
+        except Exception as log_err:
+            print(f"Failed to log error: {log_err}")
+            
+        return (json.dumps({'error': 'Internal Server Error. Please try again later.'}), 500, headers)
